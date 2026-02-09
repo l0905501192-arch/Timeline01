@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Notion 智慧響應式時間線 V5</title>
+    <title>Notion 智慧響應式時間線 V6</title>
     <style>
         :root {
             --bg-color: #ffffff;
@@ -11,7 +11,7 @@
             --global-node-color: #3b82f6;
             --text-color: #37352f;
             --card-bg: #ffffff;
-            --font-size: 15px; /* 稍微縮小預設字級以適應窄版面 */
+            --font-size: 15px; /* 此為內文基礎字級 */
         }
 
         body {
@@ -24,34 +24,34 @@
             overflow-x: hidden;
         }
 
-        /* --- 頂部控制面板 (更精簡以節省空間) --- */
+        /* --- 頂部控制面板 --- */
         #controls {
             position: sticky; top: 0; z-index: 100;
             background: rgba(255, 255, 255, 0.85);
             backdrop-filter: blur(10px);
-            padding: 10px; border-radius: 12px;
+            padding: 12px; border-radius: 12px;
             margin: 0 auto 30px auto; max-width: 900px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-            display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
+            display: flex; flex-wrap: wrap; gap: 12px; align-items: center;
             border: 1px solid rgba(0,0,0,0.05);
         }
 
-        .control-group { display: flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 600; }
-        input[type="color"] { width: 22px; height: 22px; border: 1px solid #ddd; cursor: pointer; border-radius: 4px; padding: 0; }
-        input[type="number"] { width: 40px; padding: 2px 4px; border: 1px solid #ddd; border-radius: 4px; text-align: center; }
+        .control-group { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; }
+        input[type="color"] { width: 24px; height: 24px; border: 1px solid #ddd; cursor: pointer; border-radius: 4px; padding: 0; }
+        input[type="number"] { width: 45px; padding: 3px 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center; }
 
         button {
-            cursor: pointer; padding: 6px 12px; border-radius: 8px; border: 1px solid #ddd;
-            background: white; font-weight: 600; font-size: 12px; transition: 0.2s;
+            cursor: pointer; padding: 8px 14px; border-radius: 8px; border: 1px solid #ddd;
+            background: white; font-weight: 600; font-size: 13px; transition: 0.2s;
         }
         .btn-primary { background: #2383e2; color: white; border: none; }
+        .btn-primary:hover { background: #1a73ca; }
 
-        /* --- 時間線核心容器 --- */
+        /* --- 時間線核心 --- */
         .timeline-container {
             position: relative; max-width: 900px; margin: 0 auto; padding: 10px 0;
         }
 
-        /* 智慧型中央/左側線條 */
         .timeline-line {
             position: absolute; left: 50%; top: 0; bottom: 0;
             width: 3px; background-color: var(--line-color);
@@ -59,7 +59,7 @@
         }
 
         .node-wrapper {
-            position: relative; width: 100%; margin-bottom: 35px;
+            position: relative; width: 100%; margin-bottom: 40px;
             display: flex; justify-content: center; align-items: center;
         }
 
@@ -81,72 +81,77 @@
             transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
 
-        /* --- 響應式佈局：當寬度小於 640px 時強制靠左 --- */
-        @media (max-width: 640px) {
+        /* --- 響應式佈局 (針對 Notion 窄嵌入優化) --- */
+        @media (max-width: 680px) {
             .timeline-line { left: 25px; transform: none; }
             .node-dot-container { left: 25px; transform: translateX(-50%); }
-            
             .node-wrapper.left, .node-wrapper.right { 
                 justify-content: flex-start !important; 
                 padding-left: 45px !important; 
                 padding-right: 5px !important; 
             }
-
             .node-card { margin: 0 !important; width: 100% !important; max-width: none !important; }
-            /* 強制所有箭頭指向左側線條 */
             .node-card::after { left: -6px !important; right: auto !important; box-shadow: -4px 4px 4px rgba(0,0,0,0.02) !important; }
         }
 
-        /* --- 特殊形狀定義 --- */
+        /* --- 精選圖形清單 --- */
         .shape-circle { border-radius: 50%; }
         .shape-rounded { border-radius: 6px; }
         .shape-square { border-radius: 2px; }
         .shape-diamond { transform: rotate(45deg) scale(0.85); border-radius: 2px; }
         .shape-hexagon { clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%); box-shadow: none !important; filter: drop-shadow(0 0 2px var(--bg-color)); }
         .shape-cross-star { clip-path: polygon(50% 0%, 55% 45%, 100% 50%, 55% 55%, 50% 100%, 45% 55%, 0% 50%, 45% 45%); box-shadow: none !important; filter: drop-shadow(0 0 2px var(--bg-color)); }
-        
-        .shape-cat { border-radius: 50%; position: relative; box-shadow: none !important; border: 4px solid var(--bg-color); background-clip: padding-box; }
-        .shape-cat::before, .shape-cat::after {
-            content: ''; position: absolute; top: -5px; z-index: -1;
-            width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent; border-bottom: 9px solid currentColor;
-        }
-        .shape-cat::before { left: -1px; transform: rotate(-20deg); }
-        .shape-cat::after { right: -1px; transform: rotate(20deg); }
 
         /* --- 卡片設計 --- */
         .node-card {
             width: 90%; max-width: 380px; background: var(--card-bg);
-            padding: 18px; border-radius: 14px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.02);
+            padding: 22px; border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05), 0 1px 3px rgba(0,0,0,0.02);
             position: relative; transition: all 0.3s ease;
             margin: 0 25px; border: 1px solid rgba(0,0,0,0.03);
         }
-        .node-card:hover { transform: translateY(-4px); box-shadow: 0 12px 24px rgba(0,0,0,0.08); }
+        .node-card:hover { transform: translateY(-4px); box-shadow: 0 15px 30px rgba(0,0,0,0.08); }
         
         .node-card::after {
-            content: ''; position: absolute; top: 25px; width: 10px; height: 10px; background: var(--card-bg); transform: rotate(45deg);
+            content: ''; position: absolute; top: 25px; width: 12px; height: 12px; background: var(--card-bg); transform: rotate(45deg);
         }
-        .node-wrapper.left .node-card::after { right: -5px; box-shadow: 3px -3px 3px rgba(0,0,0,0.01); }
-        .node-wrapper.right .node-card::after { left: -5px; box-shadow: -3px 3px 3px rgba(0,0,0,0.01); }
+        .node-wrapper.left .node-card::after { right: -6px; box-shadow: 3px -3px 3px rgba(0,0,0,0.01); }
+        .node-wrapper.right .node-card::after { left: -6px; box-shadow: -3px 3px 3px rgba(0,0,0,0.01); }
 
-        .node-time { font-weight: 800; font-size: 0.85em; margin-bottom: 6px; display: block; color: var(--global-node-color); }
-        .node-desc { line-height: 1.6; outline: none; font-size: var(--font-size); opacity: 0.9; }
+        /* --- 文字樣式優化 --- */
+        .node-time { 
+            font-weight: 800; 
+            /* 標題大於內文：1.2倍 */
+            font-size: calc(var(--font-size) * 1.25); 
+            margin-bottom: 8px; 
+            display: block; 
+            color: var(--global-node-color); 
+            line-height: 1.2;
+        }
+        .node-desc { 
+            line-height: 1.6; 
+            outline: none; 
+            font-size: var(--font-size); 
+            opacity: 0.9; 
+            color: var(--text-color);
+        }
 
+        /* --- 控制面板細節 --- */
         .node-settings {
-            margin-top: 15px; padding-top: 10px; border-top: 1px solid #f0f0f0;
-            display: none; flex-wrap: wrap; gap: 8px; font-size: 11px;
+            margin-top: 18px; padding-top: 12px; border-top: 1px solid #f2f2f2;
+            display: none; flex-wrap: wrap; gap: 8px; font-size: 11px; align-items: center;
         }
         .node-wrapper:hover .node-settings { display: flex; }
-        .node-settings select { padding: 2px 4px; border-radius: 4px; border: 1px solid #eee; background: #fafafa; font-size: 10px; }
+        .node-settings select { padding: 3px 6px; border-radius: 5px; border: 1px solid #ddd; background: #fafafa; font-size: 11px; cursor: pointer; }
 
         .delete-btn {
-            position: absolute; top: 10px; right: 10px; font-size: 12px; color: #ccc; cursor: pointer; transition: 0.2s;
+            position: absolute; top: 12px; right: 12px; font-size: 14px; color: #ccc; cursor: pointer; transition: 0.2s;
         }
         .delete-btn:hover { color: #ff4d4f; }
 
         /* 唯讀模式 */
         body.readonly #controls, body.readonly .node-settings, body.readonly .delete-btn, body.readonly #addBtn { display: none !important; }
-        body.readonly { padding-top: 10px; }
+        body.readonly { padding-top: 15px; }
     </style>
 </head>
 <body>
@@ -155,16 +160,16 @@
     <div class="control-group">背景<input type="color" id="bgColor" value="#ffffff"></div>
     <div class="control-group">線條<input type="color" id="lineColor" value="#e0e0e0"></div>
     <div class="control-group">主色<input type="color" id="globalNodeColor" value="#3b82f6"></div>
-    <div class="control-group">字級<input type="number" id="fontSize" value="15"></div>
+    <div class="control-group">字級<input type="number" id="fontSize" value="15" min="12" max="24"></div>
     <div style="flex-grow: 1;"></div>
-    <button class="btn-primary" onclick="generateShareLink()">📋 生成連結</button>
+    <button class="btn-primary" onclick="generateShareLink()">📋 生成分享連結</button>
 </div>
 
 <div class="timeline-container">
     <div class="timeline-line"></div>
     <div id="nodesContainer"></div>
-    <div id="addBtn" style="text-align: center; margin-top: 20px;">
-        <button onclick="addNode()">+ 新增節點</button>
+    <div id="addBtn" style="text-align: center; margin-top: 30px;">
+        <button onclick="addNode()" style="padding: 10px 24px; border: 2px dashed #ccc; background: none; color: #999;">+ 新增時間節點</button>
     </div>
 </div>
 
@@ -172,8 +177,9 @@
     let state = {
         bg: '#ffffff', line: '#e0e0e0', globalNode: '#3b82f6', text: '#37352f', size: 15,
         items: [
-            { time: 'STEP 01', desc: '這是 V5 響應式版本。試著縮小瀏覽器寬度看看！', side: 'left', shape: 'cat', color: '#ff79c6' },
-            { time: '窄版自動優化', desc: '當嵌入空間不足時，我會自動切換為靠左對齊模式，節省空間。', side: 'right', shape: 'cross-star', color: '#f59e0b' }
+            { time: '階段性里程碑', desc: '標題現在預設比內文大 25%，視覺層次更分明。', side: 'left', shape: 'circle' },
+            { time: '圖形優化', desc: '移除特殊圖標，回歸經典圓形、方形與菱形，更適合專業筆記。', side: 'right', shape: 'diamond', color: '#f59e0b' },
+            { time: '窄版自動適應', desc: '如果在 Notion 窄欄位中，我會自動靠左排版。', side: 'left', shape: 'hexagon', color: '#10b981' }
         ]
     };
 
@@ -207,7 +213,7 @@
             node.className = `node-wrapper ${side}`;
             node.innerHTML = `
                 <div class="node-dot-container">
-                    <div class="node-dot shape-${shape}" style="background-color: ${color}; color: ${color};"></div>
+                    <div class="node-dot shape-${shape}" style="background-color: ${color}"></div>
                 </div>
                 <div class="node-card">
                     <div class="delete-btn" onclick="removeNode(${index})">✕</div>
@@ -215,19 +221,21 @@
                     <div class="node-desc" contenteditable="true" onblur="updateItem(${index}, 'desc', this.innerText)">${item.desc}</div>
                     
                     <div class="node-settings">
+                        <span>設定:</span>
                         <select onchange="updateItem(${index}, 'side', this.value)">
-                            <option value="left" ${side==='left'?'selected':''}>左側</option>
-                            <option value="right" ${side==='right'?'selected':''}>右側</option>
+                            <option value="left" ${side==='left'?'selected':''}>靠左</option>
+                            <option value="right" ${side==='right'?'selected':''}>靠右</option>
                         </select>
                         <select onchange="updateItem(${index}, 'shape', this.value)">
-                            <option value="cat" ${shape==='cat'?'selected':''}>🐱 貓咪</option>
-                            <option value="cross-star" ${shape==='cross-star'?'selected':''}>✨ 十字星</option>
                             <option value="circle" ${shape==='circle'?'selected':''}>● 圓形</option>
+                            <option value="rounded" ${shape==='rounded'?'selected':''}>■ 圓角方形</option>
+                            <option value="square" ${shape==='square'?'selected':''}>■ 正方形</option>
                             <option value="diamond" ${shape==='diamond'?'selected':''}>◆ 菱形</option>
                             <option value="hexagon" ${shape==='hexagon'?'selected':''}>⬡ 六角形</option>
+                            <option value="cross-star" ${shape==='cross-star'?'selected':''}>✦ 十字星</option>
                         </select>
                         <input type="color" value="${color}" onchange="updateItem(${index}, 'color', this.value)">
-                        <button onclick="resetItem(${index})">重置</button>
+                        <button onclick="resetItem(${index})" style="padding: 2px 6px; font-size: 10px;">重置</button>
                     </div>
                 </div>
             `;
@@ -236,8 +244,8 @@
     }
 
     function updateItem(index, key, value) { state.items[index][key] = value; if (key !== 'time' && key !== 'desc') render(); }
-    function addNode() { state.items.push({ time: 'NEW', desc: '新內容...', side: state.items.length % 2 === 0 ? 'left' : 'right', shape: 'circle' }); render(); }
-    function removeNode(index) { state.items.splice(index, 1); render(); }
+    function addNode() { state.items.push({ time: '新節點標題', desc: '在此輸入內容敘述...', side: state.items.length % 2 === 0 ? 'left' : 'right', shape: 'circle' }); render(); }
+    function removeNode(index) { if(confirm('確定刪除?')) { state.items.splice(index, 1); render(); } }
     function resetItem(index) { delete state.items[index].color; delete state.items[index].shape; render(); }
 
     document.getElementById('bgColor').oninput = (e) => { state.bg = e.target.value; render(); };
