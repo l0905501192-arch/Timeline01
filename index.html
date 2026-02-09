@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Notion 智慧響應式時間線 V7 (高亮十字星版)</title>
+    <title>Notion 智慧響應式時間線 V8 (粗壯十字星版)</title>
     <style>
         :root {
             --bg-color: #ffffff;
@@ -42,7 +42,7 @@
             transform: translateX(-50%); border-radius: 2px; z-index: 1;
         }
         .node-wrapper {
-            position: relative; width: 100%; margin-bottom: 45px; /* 稍微增加間距以容納更大的圖形 */
+            position: relative; width: 100%; margin-bottom: 45px;
             display: flex; justify-content: center; align-items: center;
         }
         .node-wrapper.left { justify-content: flex-start; padding-right: 50%; box-sizing: border-box; }
@@ -55,7 +55,7 @@
         /* 基礎節點樣式 */
         .node-dot {
             width: 100%; height: 100%; background-color: var(--global-node-color);
-            box-shadow: 0 0 0 4px var(--bg-color); /* 預設用同色邊框製造間隔 */
+            box-shadow: 0 0 0 4px var(--bg-color);
             transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), filter 0.3s ease;
         }
 
@@ -64,27 +64,24 @@
         .shape-rounded { border-radius: 6px; }
         .shape-square { border-radius: 2px; }
         .shape-diamond { transform: rotate(45deg) scale(0.85); border-radius: 2px; }
-        /* 六角形使用微弱陰影 */
         .shape-hexagon { clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%); box-shadow: none !important; filter: drop-shadow(0 0 2px var(--bg-color)); }
 
-        /* ====== V7 重點修改：超級顯眼的十字星 ====== */
+        /* ====== V8 重點修改：更粗壯、大小適中的十字星 ====== */
         .shape-cross-star {
-            /* 1. 形狀微調：讓中心更細，芒刺更尖銳 */
-            clip-path: polygon(50% 0%, 52% 48%, 100% 50%, 52% 52%, 50% 100%, 48% 52%, 0% 50%, 48% 48%);
-            /* 2. 放大顯示：比其他圖形大 30% */
-            transform: scale(1.3);
+            /* 1. 形狀變粗：調整座標，讓芒刺變得更寬厚 */
+            clip-path: polygon(50% 0%, 60% 40%, 100% 50%, 60% 60%, 50% 100%, 40% 60%, 0% 50%, 40% 40%);
+            /* 2. 調整大小：因為變粗了，所以縮放比例稍微調小一點，避免視覺上過於龐大 */
+            transform: scale(1.15);
             /* 3. 移除預設陰影 */
             box-shadow: none !important;
-            /* 4. 強烈發光效果：使用雙重 drop-shadow，並利用 currentColor 繼承節點自身的顏色 */
-            /* 第一層是緊實的高光，第二層是擴散的光暈 */
-            filter: drop-shadow(0 0 3px currentColor) drop-shadow(0 0 8px currentColor);
-            /* 5. 提高層級，確保發光不被遮擋 */
+            /* 4. 發光效果收斂：讓光暈更緊實，強調實體感 */
+            filter: drop-shadow(0 0 2px currentColor) drop-shadow(0 0 5px currentColor);
             z-index: 10;
         }
-        /* 滑鼠移上去時，發光更強烈 */
+        /* 滑鼠移上去時的效果 */
         .node-wrapper:hover .shape-cross-star {
-             transform: scale(1.45);
-             filter: drop-shadow(0 0 4px currentColor) drop-shadow(0 0 12px currentColor);
+             transform: scale(1.3); /* hover 時稍微放大 */
+             filter: drop-shadow(0 0 3px currentColor) drop-shadow(0 0 8px currentColor); /* 發光稍微增強 */
         }
         /* ========================================== */
 
@@ -146,7 +143,7 @@
         bg: '#ffffff', line: '#e0e0e0', globalNode: '#3b82f6', text: '#37352f', size: 15,
         items: [
             { time: '一般節點', desc: '這是普通的圓形節點。', side: 'left', shape: 'circle' },
-            { time: '⭐ 重大事件 ⭐', desc: '看看中間這個十字星！它現在比其他節點更大，並且帶有強烈的發光效果。試著改變它的顏色看看！', side: 'right', shape: 'cross-star', color: '#f59e0b' },
+            { time: '⭐ 重點標示 ⭐', desc: '現在的十字星圖標變得更粗壯、更有份量感，但整體大小更為適中。', side: 'right', shape: 'cross-star', color: '#f59e0b' },
             { time: '結尾項目', desc: '菱形節點作為對比。', side: 'left', shape: 'diamond', color: '#10b981' }
         ]
     };
@@ -179,7 +176,6 @@
             
             const node = document.createElement('div');
             node.className = `node-wrapper ${side}`;
-            // 在這裡我們將顏色同時設置給 background-color 和 color (供 currentColor 使用)
             node.innerHTML = `
                 <div class="node-dot-container">
                     <div class="node-dot shape-${shape}" style="background-color: ${color}; color: ${color};"></div>
@@ -201,7 +197,7 @@
                             <option value="square" ${shape==='square'?'selected':''}>■ 方形</option>
                             <option value="diamond" ${shape==='diamond'?'selected':''}>◆ 菱形</option>
                             <option value="hexagon" ${shape==='hexagon'?'selected':''}>⬡ 六角形</option>
-                            <option value="cross-star" ${shape==='cross-star'?'selected':''}>✦ ✨ 十字星 (高亮)</option>
+                            <option value="cross-star" ${shape==='cross-star'?'selected':''}>✦ ✨ 十字星 (粗壯)</option>
                         </select>
                         <input type="color" value="${color}" onchange="updateItem(${index}, 'color', this.value)">
                         <button onclick="resetItem(${index})" style="padding: 2px 6px; font-size: 10px;">重置</button>
