@@ -3,380 +3,267 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Notion 美化版可編輯時間線 V2</title>
+    <title>Notion 進階美化時間線 V3</title>
     <style>
         :root {
-            /* 全局變數 */
             --bg-color: #ffffff;
             --line-color: #e0e0e0;
             --global-node-color: #3b82f6;
             --text-color: #37352f;
-            --card-bg: #ffffff; /* 卡片背景色，通常比背景稍微亮一點或持平 */
+            --card-bg: #ffffff;
             --font-size: 16px;
         }
 
         body {
             margin: 0;
-            padding: 30px 20px;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            padding: 40px 10px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             background-color: var(--bg-color);
             color: var(--text-color);
-            transition: background 0.3s, color 0.3s;
+            transition: all 0.3s;
         }
 
         /* --- 控制面板 --- */
         #controls {
-            background: rgba(247, 247, 245, 0.9);
-            backdrop-filter: blur(10px);
-            padding: 15px;
-            border-radius: 12px;
-            margin-bottom: 40px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-            display: flex;
-            flex-wrap: wrap;
-            gap: 15px;
-            align-items: center;
-            border: 1px solid rgba(0,0,0,0.08);
+            position: sticky; top: 10px; z-index: 100;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+            padding: 15px; border-radius: 12px;
+            margin: 0 auto 50px auto; max-width: 800px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            display: flex; flex-wrap: wrap; gap: 12px; align-items: center;
+            border: 1px solid rgba(0,0,0,0.05);
         }
 
-        .control-group { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 500;}
-        input[type="color"] { width: 30px; height: 30px; border: none; padding: 0; background: none; cursor: pointer; border-radius: 50%; overflow: hidden; box-shadow: 0 0 0 1px rgba(0,0,0,0.1);}
-        input[type="number"] { padding: 4px; border: 1px solid #ddd; border-radius: 4px;}
+        .control-group { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; }
+        input[type="color"] { width: 28px; height: 28px; border: none; cursor: pointer; border-radius: 4px; }
+        input[type="number"] { width: 45px; padding: 4px; border: 1px solid #ddd; border-radius: 4px; }
 
         button {
-            cursor: pointer;
-            padding: 8px 12px;
-            border-radius: 6px;
-            border: 1px solid #ddd;
-            background: white;
-            font-weight: 500;
-            transition: all 0.2s;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            cursor: pointer; padding: 8px 16px; border-radius: 8px; border: 1px solid #ddd;
+            background: white; font-weight: 600; transition: all 0.2s;
         }
-        button:hover { background: #f0f0f0; }
         .btn-primary { background: #2383e2; color: white; border: none; }
-        .btn-primary:hover { background: #1a73ca; box-shadow: 0 2px 5px rgba(35, 131, 226, 0.3); }
+        .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(35, 131, 226, 0.3); }
 
-        /* --- 時間線主體結構 --- */
+        /* --- 時間線核心佈局 --- */
         .timeline-container {
-            position: relative;
-            max-width: 700px;
-            margin: 0 auto;
-            padding: 20px 0 20px 30px; /* 左側留空給線條 */
+            position: relative; max-width: 900px; margin: 0 auto; padding: 20px 0;
         }
 
-        /* 垂直主線 */
+        /* 中央主線 */
         .timeline-line {
-            position: absolute;
-            left: 13px; /* 調整線條位置以對齊節點中心 */
-            top: 0;
-            bottom: 0;
-            width: 3px;
-            background-color: var(--line-color);
-            border-radius: 1.5px;
-            z-index: 0;
+            position: absolute; left: 50%; top: 0; bottom: 0;
+            width: 4px; background-color: var(--line-color);
+            transform: translateX(-50%); border-radius: 2px; z-index: 1;
         }
 
-        /* 單一節點區塊 */
+        /* 節點外層 */
         .node-wrapper {
-            position: relative;
-            margin-bottom: 35px;
+            position: relative; width: 100%; margin-bottom: 40px;
+            display: flex; justify-content: center; align-items: center;
         }
 
-        /* 節點圓點/形狀 */
+        /* 側向排版邏輯 */
+        .node-wrapper.left { justify-content: flex-start; padding-right: 50%; box-sizing: border-box; }
+        .node-wrapper.right { justify-content: flex-end; padding-left: 50%; box-sizing: border-box; }
+
+        /* 節點圖形容器 */
+        .node-dot-container {
+            position: absolute; left: 50%; top: 20px;
+            transform: translateX(-50%); z-index: 2;
+            width: 20px; height: 20px;
+            display: flex; align-items: center; justify-content: center;
+        }
+
         .node-dot {
-            position: absolute;
-            left: -30px; /* 調整以對齊線條中心 */
-            top: 12px; /* 調整垂直對齊 */
-            width: 16px;
-            height: 16px;
-            /* 背景色與形狀由 JS 動態控制 */
-            border: 3px solid var(--bg-color); /* 用邊框製造與線條的間隔感 */
-            z-index: 2;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+            width: 100%; height: 100%;
+            background-color: var(--global-node-color);
+            border: 3px solid var(--bg-color);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.15);
             transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
-        /* 形狀類別 */
+
+        /* --- 多樣化形狀 --- */
         .shape-circle { border-radius: 50%; }
         .shape-square { border-radius: 2px; }
         .shape-rounded { border-radius: 6px; }
+        .shape-diamond { transform: rotate(45deg); }
+        .shape-hexagon { clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%); border: none !important; }
+        .shape-star { clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%); border: none !important; }
 
-
-        /* --- 美化後的內容卡片 --- */
+        /* --- 內容卡片 --- */
         .node-card {
-            position: relative;
-            background: var(--card-bg);
-            padding: 12px 18px;
-            border-radius: 10px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.06), 0 0 1px rgba(0,0,0,0.1);
-            font-size: var(--font-size);
-            transition: all 0.3s ease;
-            border: 1px solid transparent;
-        }
-
-        /* 卡片互動動畫 */
-        .node-card:hover {
-            transform: translateY(-3px) scale(1.01);
-            box-shadow: 0 8px 15px rgba(0,0,0,0.1), 0 0 1px rgba(0,0,0,0.1);
-            border-color: rgba(0,0,0,0.05);
+            width: 90%; max-width: 380px; background: var(--card-bg);
+            padding: 20px; border-radius: 16px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.02), 0 10px 15px -3px rgba(0,0,0,0.05), 0 0 1px rgba(0,0,0,0.1);
+            position: relative; transition: all 0.3s ease;
+            margin: 0 30px; border: 1px solid rgba(0,0,0,0.03);
         }
         
-        .node-wrapper:hover .node-dot {
-             transform: scale(1.2); /* 滑鼠移到卡片時，點也稍微放大 */
+        .node-card:hover {
+            transform: translateY(-5px) scale(1.02);
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
         }
 
         .node-time {
-            font-weight: 600;
-            margin-bottom: 6px;
-            display: block;
-            color: var(--global-node-color); /* 時間顏色預設跟隨全局節點色 */
-            opacity: 0.9;
-            font-size: 0.9em;
+            font-weight: 800; font-size: 0.85em; margin-bottom: 8px; display: block;
+            letter-spacing: 0.05em; color: var(--global-node-color);
         }
 
-        .node-desc {
-            line-height: 1.5;
-            outline: none; /* 移除編輯時的藍框 */
-        }
+        .node-desc { line-height: 1.6; outline: none; font-size: var(--font-size); }
 
-        /* 刪除按鈕 */
+        /* --- 個別控制項 --- */
+        .node-settings {
+            margin-top: 15px; padding-top: 10px; border-top: 1px solid #eee;
+            display: none; flex-wrap: wrap; gap: 10px; font-size: 11px;
+        }
+        .node-wrapper:hover .node-settings { display: flex; }
+        .node-settings select, .node-settings button { padding: 3px 6px; border-radius: 4px; border: 1px solid #ddd; font-size: 11px; }
+
         .delete-btn {
-            position: absolute;
-            top: 8px;
-            right: 8px;
-            width: 24px;
-            height: 24px;
+            position: absolute; top: 10px; right: 10px; width: 20px; height: 20px;
             display: flex; align-items: center; justify-content: center;
-            color: #999;
-            border-radius: 50%;
-            cursor: pointer;
-            opacity: 0; /* 預設隱藏 */
-            transition: all 0.2s;
-            background: rgba(0,0,0,0.05);
+            border-radius: 50%; cursor: pointer; opacity: 0; transition: 0.2s; background: #fff1f0; color: #ff4d4f;
         }
-        .delete-btn:hover { color: white; background: #ff4d4f; }
-        .node-card:hover .delete-btn { opacity: 1; } /* hover 卡片時顯示 */
+        .node-card:hover .delete-btn { opacity: 1; }
 
-
-        /* --- 個別節點設定列 (Hover 時顯示) --- */
-        .node-individual-controls {
-            margin-top: 8px;
-            padding: 8px 12px;
-            background: rgba(0,0,0,0.03);
-            border-radius: 6px;
-            display: none; /* 預設隱藏 */
-            align-items: center;
-            gap: 10px;
-            font-size: 12px;
-            color: #666;
-            animation: fadeIn 0.3s ease;
-        }
-        /* 滑鼠滑過整個節點區域時顯示設定列 */
-        .node-wrapper:hover .node-individual-controls {
-            display: flex;
+        /* --- 響應式 --- */
+        @media (max-width: 600px) {
+            .timeline-line { left: 20px; }
+            .node-dot-container { left: 20px; }
+            .node-wrapper.left, .node-wrapper.right { justify-content: flex-start; padding-left: 45px; padding-right: 10px; }
+            .node-card { max-width: 100%; margin: 0; }
         }
 
-        .node-individual-controls select {
-            padding: 2px 4px; border-radius: 4px; border: 1px solid #ddd; font-size: 12px;
-        }
-        .btn-reset { padding: 2px 6px; font-size: 11px; background: none; border: 1px solid #ccc;}
-        .btn-reset:hover { border-color: #999; color: #333; background: #ddd;}
-
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); }}
-
-
-        /* --- 唯讀模式 (用於分享連結) --- */
-        body.readonly #controls { display: none !important; }
-        body.readonly .delete-btn { display: none !important; }
-        body.readonly .add-node-btn-container { display: none !important; }
-        body.readonly .node-individual-controls { display: none !important; } /* 重要：隱藏個別控制項 */
-        body.readonly .node-card:hover { transform: translateY(-3px) scale(1.01); } /* 保持動畫 */
-        body.readonly [contenteditable="true"] { contenteditable="false"; } /* 禁止編輯文字 */
-        body.readonly { padding-top: 50px; }
-
+        /* 唯讀模式 */
+        body.readonly #controls, body.readonly .node-settings, body.readonly .delete-btn, body.readonly #addBtn { display: none !important; }
+        body.readonly .node-desc { pointer-events: none; }
     </style>
 </head>
-<body id="body">
+<body>
 
 <div id="controls">
-    <div class="control-group" title="全局背景顏色">背景 <input type="color" id="bgColor" value="#ffffff"></div>
-    <div class="control-group" title="時間線條顏色">線條 <input type="color" id="lineColor" value="#e0e0e0"></div>
-    <div class="control-group" title="預設節點顏色">預設節點 <input type="color" id="globalNodeColor" value="#3b82f6"></div>
-    <div class="control-group" title="文字顏色">文字 <input type="color" id="textColor" value="#37352f"></div>
-    <div class="control-group">字體 <input type="number" id="fontSize" value="16" style="width: 45px;" min="12" max="24"> px</div>
-    <div style="flex-grow: 1;"></div> <button class="btn-primary" onclick="generateShareLink()">📋 生成分享連結</button>
+    <div class="control-group">背景<input type="color" id="bgColor" value="#ffffff"></div>
+    <div class="control-group">線條<input type="color" id="lineColor" value="#e0e0e0"></div>
+    <div class="control-group">主色<input type="color" id="globalNodeColor" value="#3b82f6"></div>
+    <div class="control-group">文字<input type="color" id="textColor" value="#37352f"></div>
+    <div class="control-group">大小<input type="number" id="fontSize" value="16"></div>
+    <div style="flex-grow: 1;"></div>
+    <button class="btn-primary" onclick="generateShareLink()">📋 生成分享連結</button>
 </div>
 
 <div class="timeline-container">
     <div class="timeline-line"></div>
-    <div id="nodesContainer">
-        </div>
-    <div class="add-node-btn-container" style="margin-top: 20px; text-align: center;">
-        <button onclick="addNode()" style="padding: 8px 20px; border: 2px dashed #ccc; color: #666;">+ 新增時間節點</button>
+    <div id="nodesContainer"></div>
+    <div id="addBtn" style="text-align: center; margin-top: 30px;">
+        <button onclick="addNode()">+ 新增時間節點</button>
     </div>
 </div>
 
 <script>
-    // 初始狀態資料結構
     let state = {
-        bg: '#ffffff',
-        line: '#e0e0e0',
-        globalNode: '#3b82f6',
-        text: '#37352f',
-        size: 16,
-        // items 現在包含可選的 'color' 和 'shape' 屬性
+        bg: '#ffffff', line: '#e0e0e0', globalNode: '#3b82f6', text: '#37352f', size: 16,
         items: [
-            { time: '2024-Q1', desc: '專案啟動會議，確認核心目標。', shape: 'circle' },
-            { time: '2024-04-15', desc: '第一階段開發完成，進行內部測試。 (滑過我看看效果)', color: '#10b981', shape: 'rounded' },
-            { time: '即將到來', desc: '準備發布 Beta 版本給種子用戶。', shape: 'square' }
+            { time: 'STEP 01', desc: '這是左側節點，你可以在下方設定切換方向。', side: 'left', shape: 'circle' },
+            { time: 'STEP 02', desc: '這是右側節點，嘗試更換不同的節點圖形！', side: 'right', shape: 'diamond', color: '#f59e0b' },
+            { time: 'STEP 03', desc: '這是六角形節點，看起來非常現代。', side: 'left', shape: 'hexagon', color: '#8b5cf6' }
         ]
     };
 
-    // 初始化函數
     function init() {
         const params = new URLSearchParams(window.location.search);
         const data = params.get('data');
-        const mode = params.get('mode');
-
         if (data) {
-            try {
-                state = JSON.parse(decodeURIComponent(atob(data)));
-            } catch (e) {
-                console.error("資料解析失敗", e);
-                alert("連結資料似乎損毀了。將加載預設內容。");
-            }
+            try { state = JSON.parse(decodeURIComponent(atob(data))); } catch (e) {}
+            if (params.get('mode') === 'view') document.body.classList.add('readonly');
         }
-        
-        if (mode === 'view') {
-            document.body.classList.add('readonly');
-            // 在唯讀模式下，移除 contenteditable 屬性
-            const editables = document.querySelectorAll('[contenteditable="true"]');
-            editables.forEach(el => el.setAttribute('contenteditable', 'false'));
-        } else {
-            // 編輯模式下，同步控制項的值
-            document.getElementById('bgColor').value = state.bg;
-            document.getElementById('lineColor').value = state.line;
-            document.getElementById('globalNodeColor').value = state.globalNode;
-            document.getElementById('textColor').value = state.text;
-            document.getElementById('fontSize').value = state.size;
-        }
-
         render();
     }
 
-    // 渲染函數 (核心邏輯)
     function render() {
-        // 更新 CSS 變數
         document.documentElement.style.setProperty('--bg-color', state.bg);
         document.documentElement.style.setProperty('--line-color', state.line);
         document.documentElement.style.setProperty('--global-node-color', state.globalNode);
         document.documentElement.style.setProperty('--text-color', state.text);
         document.documentElement.style.setProperty('--font-size', state.size + 'px');
-        // 根據背景亮度自動調整卡片背景色 (簡單版)
-        const cardBg = state.bg === '#ffffff' ? '#ffffff' : adjustColorBrightness(state.bg, 10);
-        document.documentElement.style.setProperty('--card-bg', cardBg);
+        document.documentElement.style.setProperty('--card-bg', state.bg);
 
         const container = document.getElementById('nodesContainer');
         container.innerHTML = '';
 
-        const isReadonly = document.body.classList.contains('readonly');
-
         state.items.forEach((item, index) => {
-            // 決定此節點的顏色與形狀 (優先使用個別設定，否則使用全局)
-            const nodeColor = item.color || state.globalNode;
-            const nodeShapeClass = `shape-${item.shape || 'circle'}`;
-            // 時間文字顏色：如果有自定義節點色就用該色，否則用全局設定
-            const timeColorStyle = item.color ? `color: ${item.color}` : '';
-
-            const nodeWrapper = document.createElement('div');
-            nodeWrapper.className = 'node-wrapper';
-            nodeWrapper.innerHTML = `
-                <div class="node-dot ${nodeShapeClass}" style="background-color: ${nodeColor}; border-color: var(--bg-color);"></div>
-                
-                <div class="node-card">
-                    <span class="delete-btn" onclick="removeNode(${index})">✕</span>
-                    <span class="node-time" style="${timeColorStyle}" contenteditable="${!isReadonly}" onblur="updateText(${index}, 'time', this.innerText)">${item.time}</span>
-                    <div class="node-desc" contenteditable="${!isReadonly}" onblur="updateText(${index}, 'desc', this.innerText)">${item.desc}</div>
+            const side = item.side || 'left';
+            const color = item.color || state.globalNode;
+            const shape = item.shape || 'circle';
+            
+            const node = document.createElement('div');
+            node.className = `node-wrapper ${side}`;
+            node.innerHTML = `
+                <div class="node-dot-container">
+                    <div class="node-dot shape-${shape}" style="background-color: ${color}"></div>
                 </div>
-
-                <div class="node-individual-controls">
-                    <span>個別設定:</span>
-                    <input type="color" title="此節點顏色" value="${nodeColor}" onchange="updateItemSetting(${index}, 'color', this.value)">
-                    <select title="此節點形狀" onchange="updateItemSetting(${index}, 'shape', this.value)">
-                        <option value="circle" ${(!item.shape || item.shape === 'circle') ? 'selected' : ''}>圓形</option>
-                        <option value="rounded" ${item.shape === 'rounded' ? 'selected' : ''}>圓角</option>
-                        <option value="square" ${item.shape === 'square' ? 'selected' : ''}>方形</option>
-                    </select>
-                    ${(item.color || item.shape) ? `<button class="btn-reset" onclick="resetItemSetting(${index})" title="清除個別設定，恢復全局樣式">重置</button>` : ''}
+                <div class="node-card">
+                    <div class="delete-btn" onclick="removeNode(${index})">✕</div>
+                    <span class="node-time" style="color: ${color}" contenteditable="true" onblur="updateItem(${index}, 'time', this.innerText)">${item.time}</span>
+                    <div class="node-desc" contenteditable="true" onblur="updateItem(${index}, 'desc', this.innerText)">${item.desc}</div>
+                    
+                    <div class="node-settings">
+                        <select onchange="updateItem(${index}, 'side', this.value)">
+                            <option value="left" ${side==='left'?'selected':''}>左側</option>
+                            <option value="right" ${side==='right'?'selected':''}>右側</option>
+                        </select>
+                        <select onchange="updateItem(${index}, 'shape', this.value)">
+                            <option value="circle" ${shape==='circle'?'selected':''}>圓形</option>
+                            <option value="square" ${shape==='square'?'selected':''}>方形</option>
+                            <option value="rounded" ${shape==='rounded'?'selected':''}>圓角</option>
+                            <option value="diamond" ${shape==='diamond'?'selected':''}>菱形</option>
+                            <option value="hexagon" ${shape==='hexagon'?'selected':''}>六角形</option>
+                            <option value="star" ${shape==='star'?'selected':''}>星形</option>
+                        </select>
+                        <input type="color" value="${color}" onchange="updateItem(${index}, 'color', this.value)">
+                        <button onclick="resetItem(${index})">重置</button>
+                    </div>
                 </div>
             `;
-            container.appendChild(nodeWrapper);
+            container.appendChild(node);
         });
     }
 
-    // --- 事件處理與資料操作 ---
+    function updateItem(index, key, value) {
+        state.items[index][key] = value;
+        if (key !== 'time' && key !== 'desc') render();
+    }
 
-    // 全局設定更新
+    function addNode() {
+        state.items.push({ time: 'NEW STEP', desc: '新內容描述...', side: state.items.length % 2 === 0 ? 'left' : 'right', shape: 'circle' });
+        render();
+    }
+
+    function removeNode(index) {
+        state.items.splice(index, 1);
+        render();
+    }
+
+    function resetItem(index) {
+        delete state.items[index].color;
+        delete state.items[index].shape;
+        render();
+    }
+
     document.getElementById('bgColor').oninput = (e) => { state.bg = e.target.value; render(); };
     document.getElementById('lineColor').oninput = (e) => { state.line = e.target.value; render(); };
     document.getElementById('globalNodeColor').oninput = (e) => { state.globalNode = e.target.value; render(); };
     document.getElementById('textColor').oninput = (e) => { state.text = e.target.value; render(); };
     document.getElementById('fontSize').oninput = (e) => { state.size = e.target.value; render(); };
 
-    // 節點操作
-    function addNode() {
-        // 新節點預設不帶個別顏色和形狀，使用全局設定
-        state.items.push({ time: '新時間點', desc: '點擊編輯描述內容...' });
-        render();
-    }
-
-    function removeNode(index) {
-        if(confirm('確定要刪除這個時間節點嗎？')) {
-            state.items.splice(index, 1);
-            render();
-        }
-    }
-
-    function updateText(index, key, value) {
-        state.items[index][key] = value;
-        // 不需要 render，因為是 contenteditable 直接修改的
-    }
-
-    // 更新個別節點的特殊設定 (顏色/形狀)
-    function updateItemSetting(index, key, value) {
-        state.items[index][key] = value;
-        render();
-    }
-
-    // 重置個別節點設定 (移除屬性，回歸全局)
-    function resetItemSetting(index) {
-        delete state.items[index].color;
-        delete state.items[index].shape;
-        render();
-    }
-
-    // 生成分享連結
     function generateShareLink() {
-        // 使用 encodeURIComponent 處理中文，避免 Base64 編碼問題
         const base64Data = btoa(encodeURIComponent(JSON.stringify(state)));
         const url = `${window.location.origin}${window.location.pathname}?mode=view&data=${base64Data}`;
-        
-        navigator.clipboard.writeText(url).then(() => {
-            alert('✅ 唯讀分享連結已複製到剪貼簿！\n\n你可以將此連結嵌入到 Notion 中。');
-        }, (err) => {
-            console.error('無法複製文字: ', err);
-            alert('複製失敗，請手動複製網址列的連結 (請先確保網址已更新)。');
-        });
+        navigator.clipboard.writeText(url);
+        alert('分享連結已複製！請在 Notion 使用 /embed 貼上。');
     }
 
-    // 輔助函數：調整顏色亮度 (用於卡片背景)
-    function adjustColorBrightness(hex, percent) {
-        // 這裡只是一個非常簡單的實作，用於稍微改變卡片背景色
-        // 在深色背景模式下可能需要更複雜的算法
-        return hex; 
-    }
-
-    // 啟動
     init();
 </script>
 </body>
